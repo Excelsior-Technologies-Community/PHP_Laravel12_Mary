@@ -12,10 +12,12 @@ class Task extends Model
     protected $fillable = [
         'title',
         'description',
-        'is_completed'
+        'is_completed',
     ];
 
     protected $casts = [
-        'is_completed' => 'boolean'
+        'is_completed' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 }
