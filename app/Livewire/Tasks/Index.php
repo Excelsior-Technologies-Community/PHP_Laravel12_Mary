@@ -22,6 +22,8 @@ class Index extends Component
 
     public string $dateFilter = '';
 
+    public string $priorityFilter = '';
+
     public int $perPage = 5;
 
     public array $sortBy = [
@@ -51,9 +53,15 @@ class Index extends Component
 
     public string $description = '';
 
+    public string $priority = 'medium';
+
+    public string $due_date = '';
+
     protected $rules = [
         'title' => 'required|min:3',
         'description' => 'nullable',
+        'priority' => 'required|in:low,medium,high',
+        'due_date' => 'nullable|date',
     ];
 
     /*
@@ -114,7 +122,15 @@ class Index extends Component
                 }
             })
 
-            // Date filter
+            // Priority filter
+            ->when($this->priorityFilter !== '', function ($query) {
+                $query->where(
+                    'priority',
+                    $this->priorityFilter
+                );
+            })
+
+            // Created date filter
             ->when($this->dateFilter !== '', function ($query) {
 
                 if ($this->dateFilter === 'today') {
@@ -178,6 +194,8 @@ class Index extends Component
             $task->update([
                 'title' => $this->title,
                 'description' => $this->description,
+                'priority' => $this->priority,
+                'due_date' => $this->due_date ?: null,
             ]);
 
             $this->dispatch(
@@ -189,6 +207,8 @@ class Index extends Component
             Task::create([
                 'title' => $this->title,
                 'description' => $this->description,
+                'priority' => $this->priority,
+                'due_date' => $this->due_date ?: null,
                 'is_completed' => false,
             ]);
 
@@ -218,6 +238,12 @@ class Index extends Component
         $this->title = $task->title;
 
         $this->description = $task->description ?? '';
+
+        $this->priority = $task->priority ?? 'medium';
+
+        $this->due_date = $task->due_date
+            ? $task->due_date->format('Y-m-d')
+            : '';
 
         $this->showDrawer = true;
     }
@@ -274,6 +300,10 @@ class Index extends Component
 
         $this->description = '';
 
+        $this->priority = 'medium';
+
+        $this->due_date = '';
+
         $this->resetValidation();
     }
 
@@ -290,6 +320,8 @@ class Index extends Component
         $this->status = '';
 
         $this->dateFilter = '';
+
+        $this->priorityFilter = '';
 
         $this->perPage = 10;
 
@@ -319,6 +351,11 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function updatingPriorityFilter(): void
+    {
+        $this->resetPage();
+    }
+
     public function updatingPerPage(): void
     {
         $this->resetPage();
@@ -336,6 +373,8 @@ class Index extends Component
             'id',
             'title',
             'is_completed',
+            'priority',
+            'due_date',
             'created_at',
         ];
 
@@ -387,6 +426,8 @@ class Index extends Component
                     'ID',
                     'Title',
                     'Description',
+                    'Priority',
+                    'Due Date',
                     'Status',
                     'Created At',
                 ]);
@@ -398,6 +439,10 @@ class Index extends Component
                         $task->id,
                         $task->title,
                         $task->description,
+                        ucfirst($task->priority),
+                        $task->due_date
+                            ? $task->due_date->format('Y-m-d')
+                            : '',
                         $task->is_completed
                             ? 'Completed'
                             : 'Pending',

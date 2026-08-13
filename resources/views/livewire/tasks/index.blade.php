@@ -133,50 +133,63 @@
     {{-- ACTIVE FILTERS --}}
     {{-- ========================================================= --}}
 
-    @if($search || $status || $dateFilter)
+    @if($search || $status || $dateFilter || $priorityFilter)
 
-    <div class="mb-4">
+        <div class="mb-4">
 
-        <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
 
-            <span class="text-sm font-semibold">
-                Active Filters:
-            </span>
+                <span class="text-sm font-semibold">
+                    Active Filters:
+                </span>
 
-            @if($search)
 
-            <x-badge
-                value="Search: {{ $search }}"
-                class="badge-info" />
+                @if($search)
 
-            @endif
+                    <x-badge
+                        value="Search: {{ $search }}"
+                        class="badge-info" />
 
-            @if($status)
+                @endif
 
-            <x-badge
-                value="Status: {{ ucfirst($status) }}"
-                class="badge-warning" />
 
-            @endif
+                @if($status)
 
-            @if($dateFilter)
+                    <x-badge
+                        value="Status: {{ ucfirst($status) }}"
+                        class="badge-warning" />
 
-            <x-badge
-                value="Date: {{ ucfirst($dateFilter) }}"
-                class="badge-primary" />
+                @endif
 
-            @endif
 
-            <x-button
-                label="Clear Filters"
-                icon="o-x-mark"
-                wire:click="clearFilters"
-                spinner
-                class="btn-ghost btn-sm" />
+                @if($priorityFilter)
+
+                    <x-badge
+                        value="Priority: {{ ucfirst($priorityFilter) }}"
+                        class="badge-error" />
+
+                @endif
+
+
+                @if($dateFilter)
+
+                    <x-badge
+                        value="Date: {{ ucfirst($dateFilter) }}"
+                        class="badge-primary" />
+
+                @endif
+
+
+                <x-button
+                    label="Clear Filters"
+                    icon="o-x-mark"
+                    wire:click="clearFilters"
+                    spinner
+                    class="btn-ghost btn-sm" />
+
+            </div>
 
         </div>
-
-    </div>
 
     @endif
 
@@ -208,6 +221,18 @@
                 ],
 
                 [
+                    'key' => 'priority',
+                    'label' => 'Priority',
+                    'sortable' => true
+                ],
+
+                [
+                    'key' => 'due_date',
+                    'label' => 'Due Date',
+                    'sortable' => true
+                ],
+
+                [
                     'key' => 'is_completed',
                     'label' => 'Status',
                     'sortable' => true
@@ -228,25 +253,110 @@
             :sort-by="$sortBy"
             with-pagination>
 
+
+            {{-- ================================================= --}}
+            {{-- PRIORITY --}}
+            {{-- ================================================= --}}
+
+            @scope('cell_priority', $task)
+
+                @if($task->priority === 'high')
+
+                    <x-badge
+                        value="High"
+                        class="badge-error" />
+
+                @elseif($task->priority === 'medium')
+
+                    <x-badge
+                        value="Medium"
+                        class="badge-warning" />
+
+                @else
+
+                    <x-badge
+                        value="Low"
+                        class="badge-success" />
+
+                @endif
+
+            @endscope
+
+
+            {{-- ================================================= --}}
+            {{-- DUE DATE --}}
+            {{-- ================================================= --}}
+
+            @scope('cell_due_date', $task)
+
+                @if($task->due_date)
+
+                    @if(!$task->is_completed && $task->due_date->isPast())
+
+                        <div class="flex flex-col gap-1">
+
+                            <x-badge
+                                value="Overdue"
+                                class="badge-error" />
+
+                            <span class="text-xs">
+                                {{ $task->due_date->format('d M Y') }}
+                            </span>
+
+                        </div>
+
+                    @elseif(!$task->is_completed && $task->due_date->isToday())
+
+                        <div class="flex flex-col gap-1">
+
+                            <x-badge
+                                value="Due Today"
+                                class="badge-warning" />
+
+                            <span class="text-xs">
+                                {{ $task->due_date->format('d M Y') }}
+                            </span>
+
+                        </div>
+
+                    @else
+
+                        <span class="text-sm">
+                            {{ $task->due_date->format('d M Y') }}
+                        </span>
+
+                    @endif
+
+                @else
+
+                    <span class="text-gray-400">
+                        -
+                    </span>
+
+                @endif
+
+            @endscope
+
+
             {{-- ================================================= --}}
             {{-- STATUS --}}
             {{-- ================================================= --}}
 
             @scope('cell_is_completed', $task)
 
-            @if($task->is_completed)
+                @if($task->is_completed)
 
-            <x-badge
-                value="Completed"
-                class="badge-success" />
+                    <x-badge
+                        value="Completed"
+                        class="badge-success" />
 
-            @else
+                @else
 
-            <x-badge
-                value="Pending"
-                class="badge-warning" />
+                    <x-badge
+                        value="Pending"
+                        class="badge-warning" />
 
-            @endif
+                @endif
 
             @endscope
 
@@ -257,14 +367,14 @@
 
             @scope('cell_description', $task)
 
-            <div class="max-w-md">
+                <div class="max-w-md">
 
-                {{ \Illuminate\Support\Str::limit(
+                    {{ \Illuminate\Support\Str::limit(
                         $task->description ?? '-',
                         80
                     ) }}
 
-            </div>
+                </div>
 
             @endscope
 
@@ -275,15 +385,15 @@
 
             @scope('cell_created_at', $task)
 
-            <div class="text-sm">
+                <div class="text-sm">
 
-                {{ $task->created_at?->format('d M Y') }}
+                    {{ $task->created_at?->format('d M Y') }}
 
-                <div class="text-xs text-gray-500">
-                    {{ $task->created_at?->format('h:i A') }}
+                    <div class="text-xs text-gray-500">
+                        {{ $task->created_at?->format('h:i A') }}
+                    </div>
+
                 </div>
-
-            </div>
 
             @endscope
 
@@ -294,47 +404,49 @@
 
             @scope('cell_actions', $task)
 
-            <div class="flex gap-1">
+                <div class="flex gap-1">
 
-                {{-- Edit --}}
-                <x-button
-                    icon="o-pencil"
-                    wire:click="edit({{ $task->id }})"
-                    spinner
-                    class="btn-sm btn-ghost"
-                    tooltip="Edit" />
+                    {{-- Edit --}}
+                    <x-button
+                        icon="o-pencil"
+                        wire:click="edit({{ $task->id }})"
+                        spinner
+                        class="btn-sm btn-ghost"
+                        tooltip="Edit" />
 
-                {{-- Toggle Complete --}}
-                @if($task->is_completed)
 
-                <x-button
-                    icon="o-arrow-path"
-                    wire:click="toggleComplete({{ $task->id }})"
-                    spinner
-                    class="btn-sm btn-ghost text-warning"
-                    tooltip="Mark Pending" />
+                    {{-- Toggle Complete --}}
+                    @if($task->is_completed)
 
-                @else
+                        <x-button
+                            icon="o-arrow-path"
+                            wire:click="toggleComplete({{ $task->id }})"
+                            spinner
+                            class="btn-sm btn-ghost text-warning"
+                            tooltip="Mark Pending" />
 
-                <x-button
-                    icon="o-check"
-                    wire:click="toggleComplete({{ $task->id }})"
-                    spinner
-                    class="btn-sm btn-ghost text-success"
-                    tooltip="Mark Completed" />
+                    @else
 
-                @endif
+                        <x-button
+                            icon="o-check"
+                            wire:click="toggleComplete({{ $task->id }})"
+                            spinner
+                            class="btn-sm btn-ghost text-success"
+                            tooltip="Mark Completed" />
 
-                {{-- Delete --}}
-                <x-button
-                    icon="o-trash"
-                    wire:click="delete({{ $task->id }})"
-                    wire:confirm="Are you sure you want to delete this task?"
-                    spinner
-                    class="btn-sm btn-ghost text-error"
-                    tooltip="Delete" />
+                    @endif
 
-            </div>
+
+                    {{-- Delete --}}
+                    <x-button
+                        icon="o-trash"
+                        wire:click="delete({{ $task->id }})"
+                        wire:confirm="Are you sure you want to delete this task?"
+                        spinner
+                        class="btn-sm btn-ghost text-error"
+                        tooltip="Delete" />
+
+                </div>
 
             @endscope
 
@@ -356,6 +468,7 @@
         class="lg:w-1/3">
 
         <div class="space-y-5">
+
 
             {{-- Search --}}
             <x-input
@@ -388,7 +501,33 @@
                 option-label="name" />
 
 
-            {{-- Date --}}
+            {{-- Priority --}}
+            <x-select
+                label="Priority"
+                wire:model.live="priorityFilter"
+                :options="[
+                    [
+                        'id' => '',
+                        'name' => 'All Priorities'
+                    ],
+                    [
+                        'id' => 'low',
+                        'name' => 'Low'
+                    ],
+                    [
+                        'id' => 'medium',
+                        'name' => 'Medium'
+                    ],
+                    [
+                        'id' => 'high',
+                        'name' => 'High'
+                    ],
+                ]"
+                option-value="id"
+                option-label="name" />
+
+
+            {{-- Created Date --}}
             <x-select
                 label="Created Date"
                 wire:model.live="dateFilter"
@@ -475,6 +614,7 @@
 
         <div class="space-y-4">
 
+
             {{-- Title --}}
             <x-input
                 label="Title"
@@ -490,6 +630,37 @@
                 placeholder="Enter task description"
                 rows="5"
                 error="{{ $errors->first('description') }}" />
+
+
+            {{-- Priority --}}
+            <x-select
+                label="Priority"
+                wire:model="priority"
+                :options="[
+                    [
+                        'id' => 'low',
+                        'name' => 'Low'
+                    ],
+                    [
+                        'id' => 'medium',
+                        'name' => 'Medium'
+                    ],
+                    [
+                        'id' => 'high',
+                        'name' => 'High'
+                    ],
+                ]"
+                option-value="id"
+                option-label="name"
+                error="{{ $errors->first('priority') }}" />
+
+
+            {{-- Due Date --}}
+            <x-input
+                type="date"
+                label="Due Date"
+                wire:model="due_date"
+                error="{{ $errors->first('due_date') }}" />
 
 
             {{-- Buttons --}}
